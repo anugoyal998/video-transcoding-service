@@ -7,6 +7,8 @@ import transcode from "./controllers/transcode";
 
 const router = express.Router();
 
+import { exec } from "child_process";
+
 // auth
 router.post("/auth/register", auth.register)
 router.post("/auth/login", auth.login)
@@ -26,5 +28,18 @@ router.get("/videos", authMiddleware, video.getVideos);
 
 // transcode
 router.post("/transcode/start", authMiddleware, transcode.startTranscoding);
+
+// ffmpeg test
+router.get("/ffmpeg", async (req,res) => {
+    await new Promise((resolve,reject) => {
+        exec("ffmpeg -version", (err,stdout, stderr) => {
+            if(err)reject(err)
+            console.log("stdout: ", stdout)
+            console.log("stderr: ", stderr)
+            resolve("resolved")
+        })
+    })
+    res.status(200).json({ message: "done"})
+})
 
 export default router;
