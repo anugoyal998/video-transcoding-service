@@ -1,0 +1,9 @@
+[vf#0:0 @ 00000201127f2ac0] Cannot determine format of input 0:0 after EOF
+[vf#0:0 @ 00000201127f2ac0] Task finished with error code: -1094995529 (Invalid data found when processing input)
+[vf#0:0 @ 00000201127f2ac0] Terminating thread with return code -1094995529 (Invalid data found when processing input)
+[vost#0:0/libx264 @ 0000020112e428c0] [enc:libx264 @ 00000201127ef580] Could not open encoder before EOF
+[vost#0:0/libx264 @ 0000020112e428c0] Task finished with error code: -22 (Invalid argument)    
+[vost#0:0/libx264 @ 0000020112e428c0] Terminating thread with return code -22 (Invalid argument)
+[out#0/hls @ 00000201127eba40] Nothing was written into output file, because at least one of its streams received no packets.
+frame=    0 fps=0.0 q=0.0 Lsize=       0KiB time=N/A bitrate=N/A speed=N/A
+Conversion failed!

@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  username String @id
+  providers Provider[]
+  videos Video[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum SupportedProviders {
+  EMAILPASSWORD
+  GOOGLE
+  GITHUB
+}
+
+model Provider {
+  id String
+  providerType SupportedProviders
+  userDisplayName String
+  userProfilePhotoUrl String
+  email String
+  isEmailPassword Boolean
+  password String?
+  isDefault Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  username String
+  user User @relation(fields: [username], references: [username], onDelete: Cascade, onUpdate: Cascade)
+  @@id([id,username])
+}
+
+model RefreshToken {
+  token String @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum VideoUploadStatus {
+  STARTED
+  PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum VideoTranscodeStatus {
+  NOT_STARTED
+  STARTED
+  PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum SupportedTranscodingFormats {
+  FORMAT_240
+  FORMAT_360
+  FORMAT_480
+  FORMAT_720
+  FORMAT_1080
+}
+
+model Video {
+  id String @default(cuid())
+  fileName String
+  originalS3Path String?
+  transcodedS3Path String?
+  uploadStatus VideoUploadStatus
+  uploadProgress Int
+  transcodeStatus VideoTranscodeStatus
+  transcodeProgress Int
+  transcodedFormats SupportedTranscodingFormats[]
+  multipartUploadId String
+  thumbnail String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  username String
+  user User @relation(fields: [username], references: [username], onDelete: Cascade, onUpdate: Cascade)
+  @@id([id, username])
+}
