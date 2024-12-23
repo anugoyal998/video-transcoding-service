@@ -15,7 +15,7 @@ import CustomErrorHandler from "../../services/CustomErrorHandler";
 import { TOKEN_PAYLOAD } from "../../types";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
-import { readFile } from "fs/promises";
+import { readFile, rm } from "fs/promises";
 import path from "path";
 
 export const initUpload = async (
@@ -155,8 +155,8 @@ export const completeUpload = async (
         expiresIn: 10 * 60, // 10 min
       }
     );
-    const thumbnailFolder = path.resolve(`src/video/thumbnail`)
-    const thumbnailFileName = `thumbnail-${username}-${videoId}.jpg`
+    const thumbnailFolder = path.resolve(`src/video/thumbnail`);
+    const thumbnailFileName = `thumbnail-${username}-${videoId}.jpg`;
     ffmpeg.setFfmpegPath(ffmpegInstaller.path);
     await new Promise((resolve, reject) => {
       ffmpeg(preSignedUrl)
@@ -168,19 +168,25 @@ export const completeUpload = async (
         .on("end", () => resolve(thumbnailFileName))
         .on("error", (error) => reject(error));
     });
-    await s3Client.send(new PutObjectCommand({
-      Bucket: AWS_S3_BUCKET_NAME,
-      Key: `thumbnail/${thumbnailFileName}`,
-      Body: await readFile(path.join(thumbnailFolder,thumbnailFileName))
-    }))
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: AWS_S3_BUCKET_NAME,
+        Key: `thumbnail/${thumbnailFileName}`,
+        Body: await readFile(path.join(thumbnailFolder, thumbnailFileName)),
+      })
+    );
     await db.video.update({
       data: {
         uploadStatus: "COMPLETED",
         uploadProgress: 100,
         originalS3Path: fileName,
-        thumbnail: `thumbnail/${thumbnailFileName}`
+        thumbnail: `thumbnail/${thumbnailFileName}`,
       },
       where: { id_username: { id: videoId, username } },
+    });
+    await rm(path.join(thumbnailFolder, thumbnailFileName), {
+      recursive: true,
+      force: true,
     });
     res.status(200).json({ message: "Upload Completed" });
   } catch (err) {
