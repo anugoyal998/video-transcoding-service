@@ -13,10 +13,11 @@ import { AWS_S3_BUCKET_NAME } from "../../config";
 import { db } from "../../db";
 import CustomErrorHandler from "../../services/CustomErrorHandler";
 import { TOKEN_PAYLOAD } from "../../types";
-import ffmpeg from "fluent-ffmpeg";
-import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+// import ffmpeg from "fluent-ffmpeg";
+// import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
 import { readFile, rm } from "fs/promises";
 import path from "path";
+import { exec } from "child_process";
 
 export const initUpload = async (
   req: Request,
@@ -157,17 +158,26 @@ export const completeUpload = async (
     );
     const thumbnailFolder = path.resolve(`src/video/thumbnail`);
     const thumbnailFileName = `thumbnail-${username}-${videoId}.jpg`;
-    ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-    await new Promise((resolve, reject) => {
-      ffmpeg(preSignedUrl)
-        .screenshots({
-          timestamps: [1],
-          filename: thumbnailFileName,
-          folder: thumbnailFolder,
-        })
-        .on("end", () => resolve(thumbnailFileName))
-        .on("error", (error) => reject(error));
-    });
+    // ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+    // await new Promise((resolve, reject) => {
+    // ffmpeg(preSignedUrl)
+    //   .screenshots({
+    //     timestamps: [1],
+    //     filename: thumbnailFileName,
+    //     folder: thumbnailFolder,
+    //   })
+    //     .on("end", () => resolve(thumbnailFileName))
+    //     .on("error", (error) => reject(error));
+    // });
+    const command = `ffmpeg -i "${preSignedUrl}" -ss 1 -vframes 1 "${thumbnailFolder}/${thumbnailFileName}"`;
+    await new Promise((resolve,reject) => {
+      exec(command,(error,stdout,stderr) => {
+        if(error) reject(error)
+          console.log("stdout: ", stdout)
+          console.log("stderr: ", stderr)
+          resolve(`${thumbnailFolder}/${thumbnailFileName}`)
+      })
+    })
     await s3Client.send(
       new PutObjectCommand({
         Bucket: AWS_S3_BUCKET_NAME,

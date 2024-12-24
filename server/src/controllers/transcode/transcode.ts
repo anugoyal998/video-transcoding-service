@@ -13,8 +13,8 @@ import fsPromises from "fs/promises";
 import path from "path";
 import { exec, spawn } from "child_process";
 import { promisify } from "util";
-import ffmpeg from "fluent-ffmpeg";
-import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+// import ffmpeg from "fluent-ffmpeg";
+// import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
 import s3Client from "../../services/s3Client";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { AWS_S3_BUCKET_NAME } from "../../config";
@@ -100,7 +100,7 @@ export const startTranscoding = async (
         if (response.Body instanceof Readable) {
           await pipeline(response.Body, fs.createWriteStream(originalFilePath));
         }
-        ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+        // ffmpeg.setFfmpegPath(ffmpegInstaller.path);
         const originalVideoPath = path.resolve(originalFilePath);
         await db.video.update({
           where: { id_username: { id: videoId, username } },
@@ -121,25 +121,46 @@ export const startTranscoding = async (
             indexPath: outputIndexPath,
             format,
           });
+          const command = `ffmpeg -i "${originalVideoPath}" \
+              -profile:v baseline \
+              -level 3.0 \
+              -start_number 0 \
+              -hls_time 30 \
+              -hls_list_size 0 \
+              -c:v libx264 \
+              -c:a aac \
+              -f hls \
+              -hls_segment_filename ${outputSegmentPath} \
+              -vf scale=${formatInfo.width}:${formatInfo.height} \
+              "${outputIndexPath}"
+        `;
           await new Promise((resolve, reject) => {
-            ffmpeg(originalVideoPath)
-              .addOptions([
-                "-profile:v baseline",
-                "-level 3.0",
-                "-start_number 0",
-                "-hls_time 10",
-                "-hls_list_size 0",
-                "-c:v libx264",
-                "-c:a aac",
-                "-f hls",
-                `-hls_segment_filename ${outputSegmentPath}`,
-                `-vf scale=${formatInfo.width}:${formatInfo.height}`,
-              ])
-              .output(outputIndexPath)
-              .on("end", () => resolve(outputIndexPath))
-              .on("error", (error) => reject(error))
-              .run();
+            exec(command, (error, stdout, stderr) => {
+              if (error) reject(error);
+              console.log("stdout: ", stdout);
+              console.log("stderr: ", stderr);
+              resolve(outputIndexPath);
+            });
           });
+          // await new Promise((resolve, reject) => {
+          //   ffmpeg(originalVideoPath)
+          //     .addOptions([
+          //       "-profile:v baseline",
+          //       "-level 3.0",
+          //       "-start_number 0",
+          //       "-hls_time 10",
+          //       "-hls_list_size 0",
+          //       "-c:v libx264",
+          //       "-c:a aac",
+          //       "-f hls",
+          //       `-hls_segment_filename ${outputSegmentPath}`,
+          //       `-vf scale=${formatInfo.width}:${formatInfo.height}`,
+          //     ])
+          //     .output(outputIndexPath)
+          //     .on("end", () => resolve(outputIndexPath))
+          //     .on("error", (error) => reject(error))
+          //     .run();
+          // });
           await job.updateProgress({
             action: "TRANSCODE_END",
             indexPath: outputIndexPath,
