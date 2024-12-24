@@ -16,7 +16,6 @@ import { SupportedTranscodingFormats } from "@/types";
 import Cookies from "js-cookie";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import ReactHlsPlayer from "react-hls-player";
 import { Settings, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -25,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { generateS3Url } from "@/lib/utils";
+import HlsPlayer from "@/components/HlsPlayer";
 
 enum VideoUploadStatus {
   STARTED = "STARTED",
@@ -129,7 +129,6 @@ export default function Video() {
   return (
     <div>
       <Navbar />
-      {/* TODO: handle start transcode video button */}
       {(videoDetails.transcodeStatus === VideoTranscodeStatus.NOT_STARTED ||
         videoDetails.transcodeStatus === VideoTranscodeStatus.FAILED) && (
         <div className="w-screen flex justify-center items-center">
@@ -201,14 +200,15 @@ export default function Video() {
           <div className="w-screen flex justify-center items-center">
             <Card className="m-5 md:flex" style={{ minWidth: "60%" }}>
               <CardContent className="p-2 w-full relative">
-                <ReactHlsPlayer
+                {/* <ReactHlsPlayer
                   playerRef={playerRef}
                   src={videoDetails.preSignedUrl}
                   autoPlay={false}
                   controls
                   height="auto"
                   width="100%"
-                />
+                /> */}
+                <HlsPlayer src={videoDetails.preSignedUrl} />
                 <div className="absolute bottom-4 right-4 flex items-center gap-2">
                   <DropdownMenu
                     open={isSettingsOpen}

@@ -25,6 +25,7 @@ router.post("/upload/complete", authMiddleware, upload.completeUpload)
 // video
 router.get("/video/:id/:format", authMiddleware, video.getVideo);
 router.get("/videos", authMiddleware, video.getVideos);
+router.post("/segment", authMiddleware, video.getSegment)
 
 // transcode
 router.post("/transcode/start", authMiddleware, transcode.startTranscoding);
